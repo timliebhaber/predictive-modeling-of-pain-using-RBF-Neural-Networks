@@ -1,4 +1,9 @@
+import sys
 import os
+
+# Füge `src/` zum Python-Suchpfad hinzu
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -6,7 +11,7 @@ from sklearn.kernel_approximation import RBFSampler
 from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, accuracy_score
-from visualize import plot_confusion_matrix, plot_roc_curve, plot_prediction_distribution
+from src.visualize import plot_confusion_matrix, plot_roc_curve, plot_prediction_distribution
 
 def generate_data(data_dir="data/combined"):
     """
