@@ -6,16 +6,27 @@ from sklearn.kernel_approximation import RBFSampler
 from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, accuracy_score
+from visualize import plot_confusion_matrix, plot_roc_curve, plot_prediction_distribution
 
 def generate_data(data_dir="data/combined"):
+    """
+    Liest alle CSV-Dateien im Ordner data/combined ein, extrahiert anhand des Dateinamens das Label 
+    (-BL1-: Kein Schmerz, -PA4-: Starker Schmerz) und berechnet aus der Zeitreihe statistische Features.
+    Verwendete Features:
+      - gsr_mean: Mittelwert des GSR-Signals
+      - gsr_std: Standardabweichung des GSR-Signals
+      - ecg_max: Maximaler ECG-Wert
+      - emg_energy: Summe der quadrierten EMG-Werte (Energie des Signals)
+    Anschließend wird ein stratified 80/20-Split in Trainings- und Testdaten durchgeführt.
+    """
     X = []
     y = []
     
-    # Durchlaufe alle Dateien im Verzeichnis
     for file_name in os.listdir(data_dir):
         if file_name.endswith(".csv"):
             file_path = os.path.join(data_dir, file_name)
             
+            # Label bestimmen
             if "-BL1-" in file_name:
                 label = 0  # Kein Schmerz
             elif "-PA4-" in file_name:
@@ -23,40 +34,34 @@ def generate_data(data_dir="data/combined"):
             else:
                 continue 
             
+            # Lade die gesamte CSV-Datei
             df = pd.read_csv(file_path)
             
-            # Extrahiere die relevanten Features (OHNE "time")
-            features = df[["gsr", "ecg", "emg_trapezius", "temp_adj"]].values
+            # Extrahiere statistische Features aus der gesamten Zeitreihe
+            features = {
+                "gsr_mean": df["gsr"].mean(),
+                "gsr_std": df["gsr"].std(),
+                "ecg_max": df["ecg"].max(),
+                "emg_energy": (df["emg_trapezius"] ** 2).sum(),
+            }
             
-            # Füge die Zeilen (Features) und das jeweilige Label hinzu
-            X.extend(features)
-            y.extend([label] * len(features))
+            X.append(features)
+            y.append(label)
     
-    # Konvertiere die Arrays zu float32
-    X = np.array(X, dtype=np.float32)
+    # Konvertiere in DataFrame zur einfachen Weiterverarbeitung
+    X = pd.DataFrame(X)
     y = np.array(y, dtype=np.float32)
     
-    # Aufteilung in Trainings- und Testdaten (80/20) unter Erhaltung der Klassenverteilung
+    # Train-Test-Split (80/20) unter Beibehaltung der Klassenverteilung
     X_train, X_test, y_train, y_test = train_test_split(
-        X, 
-        y, 
-        test_size=0.2, 
-        random_state=42, 
-        shuffle=True,
-        stratify=y
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
-    
-    print(f"Training data shape: {X_train.shape}, Labels: {y_train.shape}")
-    print(f"Test data shape: {X_test.shape}, Labels: {y_test.shape}")
-    print("\nClass distribution:")
-    print(f"Training: {np.unique(y_train, return_counts=True)}")
-    print(f"Test: {np.unique(y_test, return_counts=True)}")
     
     return X_train, X_test, y_train, y_test
 
 def train_sklearn_rbf(X_train, y_train, gamma=1.0, n_components=100, random_state=42):
     """
-    Trainiert ein Modell, das zunächst mithilfe eines RBFSamplers die Daten in einen 
+    Trainiert ein Modell, das die Eingabedaten zunächst mithilfe eines RBFSamplers in einen 
     höherdimensionalen Raum abbildet und anschließend ein Ridge-Regressionsmodell verwendet.
     """
     rbf_feature = RBFSampler(gamma=gamma, n_components=n_components, random_state=random_state)
@@ -69,14 +74,16 @@ def train_sklearn_rbf(X_train, y_train, gamma=1.0, n_components=100, random_stat
 
 def evaluate_sklearn_rbf(model, X_test, y_test, threshold=0.5):
     """
-    Evaluiert das Modell, indem es die Vorhersagen generiert, anhand eines Schwellenwerts
-    in Klassen (0 oder 1) umwandelt und anschließend Genauigkeit und einen Klassifikationsbericht ausgibt.
+    Evaluiert das Modell: Es werden Vorhersagen generiert und mittels eines Schwellenwerts in Klassen
+    (0 oder 1) umgewandelt. Anschließend werden Genauigkeit und ein detaillierter Klassifikationsbericht ausgegeben.
     """
-    y_pred = model.predict(X_test)
-    y_pred_class = np.where(y_pred >= threshold, 1, 0)
+    y_scores = model.predict(X_test)
+    y_pred_class = np.where(y_scores >= threshold, 1, 0)
     
     print("Genauigkeit:", accuracy_score(y_test, y_pred_class))
     print("Klassifikationsbericht:\n", classification_report(y_test, y_pred_class))
+    
+    return y_scores, y_pred_class
 
 def main():
     # Schritt 1: Generiere Trainings- und Testdaten
@@ -86,7 +93,12 @@ def main():
     model = train_sklearn_rbf(X_train, y_train, gamma=1.0, n_components=100, random_state=42)
     
     # Schritt 3: Evaluiere das trainierte Modell
-    evaluate_sklearn_rbf(model, X_test, y_test, threshold=0.5)
+    y_scores, y_pred_class = evaluate_sklearn_rbf(model, X_test, y_test, threshold=0.5)
+    
+    # Schritt 4: Visualisiere die Ergebnisse
+    plot_confusion_matrix(y_test, y_pred_class)
+    plot_roc_curve(y_test, y_scores)
+    plot_prediction_distribution(y_test, y_scores)
 
 if __name__ == "__main__":
     main()
