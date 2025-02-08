@@ -8,7 +8,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, accuracy_score
 
 def generate_data(data_dir="data/combined"):
- 
     X = []
     y = []
     
@@ -26,8 +25,8 @@ def generate_data(data_dir="data/combined"):
             
             df = pd.read_csv(file_path)
             
-            # Extrahiere die relevanten Features
-            features = df[["time", "gsr", "ecg", "emg_trapezius", "temp_adj"]].values
+            # Extrahiere die relevanten Features (OHNE "time")
+            features = df[["gsr", "ecg", "emg_trapezius", "temp_adj"]].values
             
             # Füge die Zeilen (Features) und das jeweilige Label hinzu
             X.extend(features)
@@ -56,9 +55,10 @@ def generate_data(data_dir="data/combined"):
     return X_train, X_test, y_train, y_test
 
 def train_sklearn_rbf(X_train, y_train, gamma=1.0, n_components=100, random_state=42):
-
-   # Modell,wird mit RBFSampler trainiert und die Daten in einen werden  in höherdimensionalen Raum abgebildet und anschließend wird ein Ridge-Regressionsmodell verwendet.
-
+    """
+    Trainiert ein Modell, das zunächst mithilfe eines RBFSamplers die Daten in einen 
+    höherdimensionalen Raum abbildet und anschließend ein Ridge-Regressionsmodell verwendet.
+    """
     rbf_feature = RBFSampler(gamma=gamma, n_components=n_components, random_state=random_state)
     clf = Pipeline([
         ("rbf_feature", rbf_feature),
@@ -68,7 +68,10 @@ def train_sklearn_rbf(X_train, y_train, gamma=1.0, n_components=100, random_stat
     return clf
 
 def evaluate_sklearn_rbf(model, X_test, y_test, threshold=0.5):
-
+    """
+    Evaluiert das Modell, indem es die Vorhersagen generiert, anhand eines Schwellenwerts
+    in Klassen (0 oder 1) umwandelt und anschließend Genauigkeit und einen Klassifikationsbericht ausgibt.
+    """
     y_pred = model.predict(X_test)
     y_pred_class = np.where(y_pred >= threshold, 1, 0)
     
@@ -82,7 +85,7 @@ def main():
     # Schritt 2: Trainiere das RBFN-Modell
     model = train_sklearn_rbf(X_train, y_train, gamma=1.0, n_components=100, random_state=42)
     
-    # Schritt 3: Bewerte das trainierte Modell
+    # Schritt 3: Evaluiere das trainierte Modell
     evaluate_sklearn_rbf(model, X_test, y_test, threshold=0.5)
 
 if __name__ == "__main__":
