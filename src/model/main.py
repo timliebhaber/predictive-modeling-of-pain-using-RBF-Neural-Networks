@@ -74,7 +74,7 @@ def main():
 
     # Step 2c: Train and evaluate MLP model
     model_mlp = train_mlp(X_train, X_test, y_train, y_test)
-
+#
     # Schritt 3: Evaluiere das trainierte Modell
     #y_scores, y_pred_class = evaluate_sklearn_rbf(model_rbf, X_test, y_test, threshold=0.5)
     
