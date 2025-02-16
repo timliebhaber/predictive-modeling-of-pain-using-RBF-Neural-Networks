@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from src.model.mlp_model import train_mlp
 from src.model.random_forest_model import train_random_forest
+from src.model.rbf_model import train_and_test_sklearn_rbf
 
 def generate_data(data_dir="data/combined"):
     """
@@ -67,19 +68,19 @@ def main():
     X_train, X_test, y_train, y_test = generate_data(data_dir="data/combined")
     
     # Schritt 2: Trainiere das RBFN-Modell
-    #model_rbf = train_sklearn_rbf(X_train, y_train, gamma=1.0, n_components=100, random_state=42)
+    model_rbf = train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=200, random_state=42)
 
     # Step 2b: Train and evaluate Random Forest model
-    model_rf = train_random_forest(X_train, X_test, y_train, y_test)
+    #model_rf = train_random_forest(X_train, X_test, y_train, y_test)
 
     # Step 2c: Train and evaluate MLP model
-    model_mlp = train_mlp(X_train, X_test, y_train, y_test)
-#
+    #model_mlp = train_mlp(X_train, X_test, y_train, y_test)
+
     # Schritt 3: Evaluiere das trainierte Modell
     #y_scores, y_pred_class = evaluate_sklearn_rbf(model_rbf, X_test, y_test, threshold=0.5)
     
     # Schritt 4: Visualisiere die Ergebnisse
-    """ 
+    """
     plot_confusion_matrix(y_test, y_pred_class)
     plot_roc_curve(y_test, y_scores)
     plot_prediction_distribution(y_test, y_scores)
