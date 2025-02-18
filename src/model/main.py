@@ -67,19 +67,16 @@ def main():
     # Schritt 1: Generiere Trainings- und Testdaten
     X_train, X_test, y_train, y_test = generate_data(data_dir="data/combined")
     
-    # Schritt 2: Trainiere das RBFN-Modell
+    # Step 2: Train and evaluate the RBFN model
     model_rbf = train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=200, random_state=42)
 
     # Step 2b: Train and evaluate Random Forest model
-    #model_rf = train_random_forest(X_train, X_test, y_train, y_test)
+    model_rf = train_random_forest(X_train, X_test, y_train, y_test)
 
     # Step 2c: Train and evaluate MLP model
-    #model_mlp = train_mlp(X_train, X_test, y_train, y_test)
-
-    # Schritt 3: Evaluiere das trainierte Modell
-    #y_scores, y_pred_class = evaluate_sklearn_rbf(model_rbf, X_test, y_test, threshold=0.5)
+    model_mlp = train_mlp(X_train, X_test, y_train, y_test)
     
-    # Schritt 4: Visualisiere die Ergebnisse
+    # Schritt 3: Visualisiere die Ergebnisse
     """
     plot_confusion_matrix(y_test, y_pred_class)
     plot_roc_curve(y_test, y_scores)
