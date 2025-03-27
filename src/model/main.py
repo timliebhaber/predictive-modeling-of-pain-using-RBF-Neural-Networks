@@ -1,27 +1,15 @@
 import sys
 import os
-
-# Füge `src/` zum Python-Suchpfad hinzu
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from src.model.mlp_model import train_mlp
 from src.model.random_forest_model import train_random_forest
 from src.model.rbf_model import train_and_test_sklearn_rbf
 
 def generate_data(data_dir="data/combined"):
-    """
-    Liest alle CSV-Dateien im Ordner data/combined ein, extrahiert anhand des Dateinamens das Label 
-    (-BL1-: Kein Schmerz, -PA4-: Starker Schmerz) und berechnet aus der Zeitreihe statistische Features.
-    Verwendete Features:
-      - gsr_mean: Mittelwert des GSR-Signals
-      - gsr_std: Standardabweichung des GSR-Signals
-      - ecg_max: Maximaler ECG-Wert
-      - emg_energy: Summe der quadrierten EMG-Werte (Energie des Signals)
-    Anschließend wird ein stratified 80/20-Split in Trainings- und Testdaten durchgeführt.
-    """
+
     X = []
     y = []
     
@@ -37,7 +25,6 @@ def generate_data(data_dir="data/combined"):
             else:
                 continue 
             
-            # Lade die gesamte CSV-Datei
             df = pd.read_csv(file_path)
             
             # Extrahiere statistische Features aus der gesamten Zeitreihe
@@ -45,7 +32,7 @@ def generate_data(data_dir="data/combined"):
                 "gsr_mean": df["gsr"].mean(),
                 "gsr_std": df["gsr"].std(),
                 "ecg_max": df["ecg"].max(),
-                "emg_energy": (df["emg_trapezius"] ** 2).sum(),
+                "emg_energy": (df["emg_trapezius"] ** 2).sum(), # Quadriert um nur positive Werte zu erhalten
             }
             
             X.append(features)
@@ -65,22 +52,16 @@ def generate_data(data_dir="data/combined"):
 
 def main():
     # Schritt 1: Generiere Trainings- und Testdaten
+    print("\nGenerating data.\n")
     X_train, X_test, y_train, y_test = generate_data(data_dir="data/combined")
     
-    # Step 2: Train and evaluate the RBFN model
+    # Schritt 2: Trainiere und evaluiere Modelle
+    print("\nTraining and evaluating models.\n\n\n")
     model_rbf = train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=200, random_state=42)
 
-    # Step 2b: Train and evaluate Random Forest model
     model_rf = train_random_forest(X_train, X_test, y_train, y_test)
 
-    # Step 2c: Train and evaluate MLP model
     model_mlp = train_mlp(X_train, X_test, y_train, y_test)
-    
-    # Schritt 3: Visualisiere die Ergebnisse
-    """
-    plot_confusion_matrix(y_test, y_pred_class)
-    plot_roc_curve(y_test, y_scores)
-    plot_prediction_distribution(y_test, y_scores)
-    """
+
 if __name__ == "__main__":
     main()

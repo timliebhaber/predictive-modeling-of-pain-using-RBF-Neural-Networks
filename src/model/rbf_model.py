@@ -4,6 +4,7 @@ from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, accuracy_score
+import src.visualize as vis
 
 def train_and_test_sklearn_rbf(
     X_train,
@@ -49,5 +50,9 @@ def train_and_test_sklearn_rbf(
     # Metriken ausgeben
     print("Accuracy RBF:", accuracy_score(y_test, y_pred_class))
     print("Classification report RBF:\n", classification_report(y_test, y_pred_class))
+
+    #vis.plot_confusion_matrix(y_test, y_pred_class)
+    #vis.plot_roc_curve(y_test, y_scores)
+    #vis.plot_prediction_distribution(y_test, y_scores)
     
     return model, y_scores, y_pred_class
