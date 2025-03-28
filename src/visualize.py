@@ -3,9 +3,6 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 
 def plot_confusion_matrix(y_true, y_pred_class):
-    """
-    Erstellt eine Heatmap der Konfusionsmatrix, die die Verteilung der wahren und vorhergesagten Klassen zeigt.
-    """
     cm = confusion_matrix(y_true, y_pred_class)
     plt.figure(figsize=(6, 5))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
@@ -17,10 +14,6 @@ def plot_confusion_matrix(y_true, y_pred_class):
     plt.show()
 
 def plot_roc_curve(y_true, y_scores):
-    """
-    Plottet die ROC-Kurve (Receiver Operating Characteristic) und berechnet die AUC (Area Under the Curve),
-    basierend auf den kontinuierlichen Vorhersage-Scores.
-    """
     fpr, tpr, thresholds = roc_curve(y_true, y_scores)
     roc_auc = auc(fpr, tpr)
     plt.figure(figsize=(6, 5))
@@ -36,10 +29,6 @@ def plot_roc_curve(y_true, y_scores):
     plt.show()
 
 def plot_prediction_distribution(y_true, y_scores):
-    """
-    Plottet die Verteilung der vom Modell gelieferten Vorhersage-Scores getrennt nach den wahren Klassen.
-    So erhält man einen Eindruck, wie gut die Score-Verteilungen der Klassen getrennt sind.
-    """
     plt.figure(figsize=(8, 6))
     # Aufteilung der Scores nach den wahren Klassen
     scores_class0 = y_scores[y_true == 0]
