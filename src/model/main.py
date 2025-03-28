@@ -27,7 +27,7 @@ def generate_data(data_dir="data/combined"):
             
             df = pd.read_csv(file_path)
             
-            # Extrahiere statistische Features aus der gesamten Zeitreihe
+            # Extrahiere Features
             features = {
                 "gsr_mean": df["gsr"].mean(),
                 "gsr_std": df["gsr"].std(),
@@ -38,11 +38,10 @@ def generate_data(data_dir="data/combined"):
             X.append(features)
             y.append(label)
     
-    # Konvertiere in DataFrame zur einfachen Weiterverarbeitung
     X = pd.DataFrame(X)
     y = np.array(y, dtype=np.float32)
     
-    # Train-Test-Split (80/20) unter Beibehaltung der Klassenverteilung
+    # Train-Test-Split (80/20)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )

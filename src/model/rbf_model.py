@@ -16,27 +16,10 @@ def train_and_test_sklearn_rbf(
     random_state,
     threshold=0.5
 ):
-    """
-    Kombinierte Funktion die folgendes durchführt:
-    1. Trainiert ein RBF-Ridge Modell mit RBFSampler und Ridge Regression
-    2. Evaluierung durch Vorhersagen auf Testdaten
-    3. Klassifizierung mittels Schwellenwert
-    4. Gibt Modell, Scores und klassifizierte Vorhersagen zurück
     
-    Parameter:
-    X_train, y_train - Trainingsdaten
-    X_test, y_test - Testdaten und Labels
-    gamma - RBF Kernel Parameter
-    n_components - Anzahl der RBF-Komponenten
-    random_state - Seed für Reproduzierbarkeit
-    threshold - Klassifizierungsschwelle (0-1)
-    
-    Returns:
-    Tuple (Modell, Vorhersage-Scores, klassifizierte Vorhersagen)
-    """
     
     model = Pipeline([
-    ("scaler", StandardScaler()),  # Add scaling FIRST (crucial for RBF)
+    ("scaler", StandardScaler()),
     ("rbf_feature", RBFSampler(gamma=gamma, n_components=n_components, random_state=random_state)),
     ("linear", Ridge())
 ])
