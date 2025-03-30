@@ -14,14 +14,14 @@ from src.model.rbf_model import train_and_test_sklearn_rbf
 def compute_features(signal_dict):
     features = {}
     
-    # ECG Features with validation
+    # ECG Features
     try:
         ecg_signal = signal_dict["ecg"]
         features["ecg_max"] = np.max(ecg_signal) if ecg_signal.size else 0.0
     except KeyError:
         features["ecg_max"] = 0.0
 
-    # GSR Processing with comprehensive checks
+    # GSR Features
     try:
         gsr_signal = signal_dict["gsr"]
         if gsr_signal.size == 0:
@@ -72,7 +72,7 @@ def compute_features(signal_dict):
             "gsr_mean_diff", "gsr_rms", "gsr_range"
         ]})
 
-    # EMG Energy with validation
+    # EMG Feature
     try:
         emg_signal = signal_dict["emg_trapezius"]
         features["emg_energy"] = np.sum(np.square(emg_signal)) if emg_signal.size else 0.0
@@ -117,22 +117,26 @@ def generate_data(data_dir="data/combined"):
     X = pd.DataFrame(X)
     y = np.array(y, dtype=np.int32) 
     
-    # Train-Test-Split
-    return train_test_split(
+    return X, y
+
+def main():
+    print("\nGenerating data...\n")
+    X, y = generate_data() 
+    
+    # Split für RBFN und MLP
+    X_train, X_test, y_train, y_test = train_test_split(
         X, y, 
         test_size=0.2, 
         random_state=42, 
         stratify=y
     )
-
-def main():
-    print("\nGenerating data...\n")
-    X_train, X_test, y_train, y_test = generate_data()
     
-    print("\nTraining and evaluating models.\n")
+    print("\nTraining and evaluating RBFN and .\n")
     train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=200, random_state=42)
-    train_random_forest(X_train, X_test, y_train, y_test)
     train_mlp(X_train, X_test, y_train, y_test)
+    
+    print("\nTraining Random Forest with Leave-One-Out...\n")
+    train_random_forest(X, y)
 
 if __name__ == "__main__":
     main()
