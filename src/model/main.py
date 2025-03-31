@@ -17,30 +17,22 @@ def compute_features(signal_dict):
     # ECG Features
     try:
         ecg_signal = signal_dict["ecg"]
-        features["ecg_max"] = np.max(ecg_signal) if ecg_signal.size else 0.0
+        features["ecg_max"] = np.max(ecg_signal)
     except KeyError:
         features["ecg_max"] = 0.0
 
     # GSR Features
     try:
         gsr_signal = signal_dict["gsr"]
-        if gsr_signal.size == 0:
-            raise ValueError("Empty GSR signal")
-            
-        # Check for constant signal
-        if np.all(gsr_signal == gsr_signal[0]):
-            raise ValueError("Constant GSR signal")
-            
-        # Process with NeuroKit2
+                   
         eda_signals, _ = nk.eda_process(gsr_signal, sampling_rate=1000)
-        tonic = eda_signals["EDA_Tonic"].replace([np.inf, -np.inf], np.nan).dropna()
+        tonic = eda_signals["EDA_Tonic"]
         
         if tonic.empty:
             raise ValueError("No valid tonic component")
-            
-        # Calculate features with NaN protection
+             
         diff1 = np.diff(gsr_signal)
-        diff2 = np.diff(gsr_signal, 2) if len(gsr_signal) > 2 else []
+        diff2 = np.diff(gsr_signal, 2)
         
         gsr_features = {
             "gsr_mean": tonic.mean(),
@@ -48,16 +40,16 @@ def compute_features(signal_dict):
             "gsr_min": tonic.min(),
             "gsr_max": tonic.max(),
             "gsr_variance": tonic.var(),
-            "gsr_skewness": skew(tonic, bias=False) if len(tonic) > 1 else 0,
-            "gsr_kurtosis": kurtosis(tonic, bias=False, fisher=False) if len(tonic) > 3 else 0,
-            "gsr_abs_first_diff_mean": np.abs(diff1).mean() if diff1.size else 0,
-            "gsr_abs_second_diff_mean": np.abs(diff2).mean() if len(diff2) > 0 else 0,
-            "gsr_mean_diff": diff1.mean() if diff1.size else 0,
+            "gsr_skewness": skew(tonic, bias=False),
+            "gsr_kurtosis": kurtosis(tonic, bias=False, fisher=False),
+            "gsr_abs_first_diff_mean": np.abs(diff1).mean(),
+            "gsr_abs_second_diff_mean": np.abs(diff2).mean(),
+            "gsr_mean_diff": diff1.mean(),
             "gsr_rms": np.sqrt(np.mean(np.square(gsr_signal))),
-            "gsr_range": np.ptp(gsr_signal) if gsr_signal.size else 0
+            "gsr_range": np.ptp(gsr_signal)
         }
         
-        # Replace NaNs/Infs
+        #NaN Entfernen
         gsr_features = {k: np.nan_to_num(v, nan=0.0, posinf=0.0, neginf=0.0) 
                        for k, v in gsr_features.items()}
         
