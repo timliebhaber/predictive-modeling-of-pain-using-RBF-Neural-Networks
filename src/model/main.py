@@ -77,17 +77,15 @@ def compute_features(signal_dict):
 def generate_data(data_dir="data/combined"):
     X = []
     y = []
-    groups = []  # This will hold the grouping information
+    groups = [] 
 
     for file_name in os.listdir(data_dir):
         if not file_name.endswith(".csv"):
             continue
 
-        # Use the first 6 characters of the file name as the subject/group identifier
         subject_id = file_name[:6]
         groups.append(subject_id)
 
-        # Determine label based on the file name
         if "-BL1-" in file_name:
             label = 0  # No pain
         elif "-PA4-" in file_name:
@@ -113,13 +111,13 @@ def generate_data(data_dir="data/combined"):
 
     X = pd.DataFrame(X)
     y = np.array(y, dtype=np.int32)
-    groups = np.array(groups)  # Convert groups list to an array
+    groups = np.array(groups) 
 
     return X, y, groups
 
 def main():
     print("\nGenerating data...\n")
-    X, y = generate_data() 
+    X, y, groups = generate_data() 
     
     # Split für RBFN und MLP
     X_train, X_test, y_train, y_test = train_test_split(
@@ -134,7 +132,7 @@ def main():
     train_mlp(X_train, X_test, y_train, y_test)
     
     print("\nTraining Random Forest with Leave-One-Out...\n")
-    train_random_forest(X, y)
+    train_random_forest(X, y, groups)
 
 if __name__ == "__main__":
     main()
