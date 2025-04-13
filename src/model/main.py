@@ -77,22 +77,27 @@ def compute_features(signal_dict):
 def generate_data(data_dir="data/combined"):
     X = []
     y = []
-    
+    groups = []  # This will hold the grouping information
+
     for file_name in os.listdir(data_dir):
         if not file_name.endswith(".csv"):
             continue
-            
-        # Determine label
+
+        # Use the first 6 characters of the file name as the subject/group identifier
+        subject_id = file_name[:6]
+        groups.append(subject_id)
+
+        # Determine label based on the file name
         if "-BL1-" in file_name:
             label = 0  # No pain
         elif "-PA4-" in file_name:
             label = 1  # Strong pain
         else:
             continue
-            
+
         file_path = os.path.join(data_dir, file_name)
         df = pd.read_csv(file_path)
-        
+
         try:
             features = compute_features({
                 "ecg": df["ecg"].values,
@@ -102,14 +107,15 @@ def generate_data(data_dir="data/combined"):
         except KeyError as e:
             print(f"Missing column in {file_name}: {e}")
             continue
-            
+
         X.append(features)
         y.append(label)
-    
+
     X = pd.DataFrame(X)
-    y = np.array(y, dtype=np.int32) 
-    
-    return X, y
+    y = np.array(y, dtype=np.int32)
+    groups = np.array(groups)  # Convert groups list to an array
+
+    return X, y, groups
 
 def main():
     print("\nGenerating data...\n")
