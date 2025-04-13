@@ -1,12 +1,12 @@
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import LeaveOneOut
+from sklearn.model_selection import LeaveOneGroupOut
 
 
-def train_random_forest(X, y):  # Updated function signature
+def train_random_forest(X, y):
     model = RandomForestClassifier(n_estimators=99, random_state=42)
     
-    loo = LeaveOneOut()
+    loo = LeaveOneGroupOut()
     y_true = []
     y_pred = []
     
@@ -18,9 +18,8 @@ def train_random_forest(X, y):  # Updated function signature
         y_true.append(y_test[0])
         y_pred.append(pred[0])
     
-    print("Accuracy RF (LOO): ", accuracy_score(y_true, y_pred))
-    print("Classification Report RF (LOO):\n", classification_report(y_true, y_pred))
+    print("Accuracy RF: ", accuracy_score(y_true, y_pred))
+    print("Classification Report RF:\n", classification_report(y_true, y_pred))
     
-    # Train final model on entire dataset
     model.fit(X, y)
     return model
