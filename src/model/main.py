@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 from src.model.mlp_model import train_mlp
 from src.model.random_forest_model import train_random_forest
 from src.model.rbf_model import train_and_test_sklearn_rbf
+from src.model.svm_model import train_svm
 
 def compute_features(signal_dict):
     features = {}
@@ -128,11 +129,14 @@ def main():
     )
     
     print("\nTraining and evaluating RBFN and .\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=200, random_state=42)
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=200, random_state=20)
     train_mlp(X_train, X_test, y_train, y_test)
     
     print("\nTraining Random Forest with Leave-One-Out...\n")
     train_random_forest(X, y, groups)
+
+    print("\nTraining Support Vector Machine with Leave-One-Out...\n")
+    train_svm(X, y, groups)
 
 if __name__ == "__main__":
     main()
