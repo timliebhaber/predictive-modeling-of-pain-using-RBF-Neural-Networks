@@ -4,7 +4,7 @@ from sklearn.model_selection import LeaveOneGroupOut
 
 
 def train_random_forest(X, y, groups):
-    model = RandomForestClassifier(n_estimators=99, random_state=42)
+    model = RandomForestClassifier(n_estimators=99, random_state=20)
     
     loo = LeaveOneGroupOut()
     y_true = []
