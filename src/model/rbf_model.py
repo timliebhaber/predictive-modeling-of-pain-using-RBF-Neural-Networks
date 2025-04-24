@@ -34,7 +34,7 @@ def train_and_test_sklearn_rbf(
     print("Accuracy RBF:", accuracy_score(y_test, y_pred_class))
     print("Classification report RBF:\n", classification_report(y_test, y_pred_class))
 
-    vis.plot_confusion_matrix(y_test, y_pred_class)
+    #vis.plot_confusion_matrix(y_test, y_pred_class)
     #vis.plot_roc_curve(y_test, y_scores)
     #vis.plot_prediction_distribution(y_test, y_scores)
     

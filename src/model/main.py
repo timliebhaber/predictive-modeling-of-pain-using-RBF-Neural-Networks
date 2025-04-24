@@ -128,15 +128,87 @@ def main():
         stratify=y
     )
     
-    print("\nTraining and evaluating RBFN and .\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=200, random_state=20)
-    train_mlp(X_train, X_test, y_train, y_test)
-    
-    print("\nTraining Random Forest with Leave-One-Out...\n")
-    train_random_forest(X, y, groups)
+    print("\nTraining and evaluating RBFN gamma=0.01, components=10.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=10, random_state=20)
 
-    print("\nTraining Support Vector Machine with Leave-One-Out...\n")
-    train_svm(X, y, groups)
+    print("\nTraining and evaluating RBFN gamma=0.05, components=10.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.05, n_components=10, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.1, components=10.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=10, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.5, components=10.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.5, n_components=10, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=1, components=10.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=1, n_components=10, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.01, components=50.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=50, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.05, components=50.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.05, n_components=50, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.1, components=50.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=50, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.5, components=50.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.5, n_components=50, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=1, components=50.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=1, n_components=50, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.01, components=100.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=100, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.05, components=100.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.05, n_components=100, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.1, components=100.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=100, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.5, components=100.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.5, n_components=100, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=1, components=100.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=1, n_components=100, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.01, components=200.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=200, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.05, components=200.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.05, n_components=200, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.1, components=200.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=200, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.5, components=200.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.5, n_components=200, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=1, components=200.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=1, n_components=200, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.01, components=500.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=500, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.05, components=500.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.05, n_components=500, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.1, components=500.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=500, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=0.5, components=500.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.5, n_components=500, random_state=20)
+
+    print("\nTraining and evaluating RBFN gamma=1, components=500.\n")
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=1, n_components=500, random_state=20)
+    #train_mlp(X_train, X_test, y_train, y_test)
+    
+    #print("\nTraining Random Forest with Leave-One-Out...\n")
+    #train_random_forest(X, y, groups)
+
+    #print("\nTraining Support Vector Machine with Leave-One-Out...\n")
+    #train_svm(X, y, groups)
 
 if __name__ == "__main__":
     main()
