@@ -2,15 +2,20 @@ import sys
 import os
 import pandas as pd
 import numpy as np
+from scipy import stats
+from statsmodels.stats.multitest import multipletests
 from scipy.stats import skew, kurtosis
 from sklearn.model_selection import train_test_split
 import neurokit2 as nk
+from sklearn.inspection import permutation_importance
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from src.model.mlp_model import train_mlp
 from src.model.random_forest_model import train_random_forest
 from src.model.rbf_model import train_and_test_sklearn_rbf
 from src.model.svm_model import train_svm
+from src.rbf_feature_stats import feature_stats
 
 def compute_features(signal_dict):
     features = {}
@@ -80,6 +85,9 @@ def generate_data(data_dir="data/combined"):
     y = []
     groups = [] 
 
+    bl1_count = 0
+    pa4_count = 0
+
     for file_name in os.listdir(data_dir):
         if not file_name.endswith(".csv"):
             continue
@@ -89,8 +97,10 @@ def generate_data(data_dir="data/combined"):
 
         if "-BL1-" in file_name:
             label = 0  # No pain
+            bl1_count += 1
         elif "-PA4-" in file_name:
             label = 1  # Strong pain
+            pa4_count += 1
         else:
             continue
 
@@ -110,15 +120,137 @@ def generate_data(data_dir="data/combined"):
         X.append(features)
         y.append(label)
 
+    print(f"Amount BL1-Labels (no pain): {bl1_count}")
+    print(f"Amount PA4-Labels (severe pain): {pa4_count}")
+
     X = pd.DataFrame(X)
     y = np.array(y, dtype=np.int32)
     groups = np.array(groups) 
 
     return X, y, groups
 
+def run_significance_tests(
+    X: pd.DataFrame,
+    y: np.ndarray,
+    alpha: float = 0.05,
+    fdr_correction: bool = True,
+) -> pd.DataFrame:
+    """
+    Vergleicht BL1- (y==0) und PA4-Gruppe (y==1) für jedes Feature:
+    1. Shapiro-Wilk: Normalität pro Gruppe
+    2. t-Test (unequal var) bei Normalität, sonst Mann-Whitney-U
+    3. Optionale FDR-Korrektur (Benjamini–Hochberg)
+    4. Effekt­stärke:  Cohen's d   (param.) bzw. Rank-Biserial (non-param.)
+    Gibt einen DataFrame mit allen Kennzahlen zurück.
+    """
+    results = []
+
+    for feat in X.columns:
+        g0 = X.loc[y == 0, feat].astype(float).replace([np.inf, -np.inf], np.nan).dropna()
+        g1 = X.loc[y == 1, feat].astype(float).replace([np.inf, -np.inf], np.nan).dropna()
+
+        # Falls zu wenige Beobachtungen vorhanden sind, überspringen
+        if min(len(g0), len(g1)) < 3:
+            results.append(
+                dict(
+                    feature=feat,
+                    test="NA",
+                    stat=np.nan,
+                    p_value=np.nan,
+                    effect_size=np.nan,
+                    mean_bl1=g0.mean(),
+                    sd_bl1=g0.std(ddof=1),
+                    median_bl1=g0.median(),
+                    iqr_bl1=g0.quantile(0.75) - g0.quantile(0.25),
+                    mean_pa4=g1.mean(),
+                    sd_pa4=g1.std(ddof=1),
+                    median_pa4=g1.median(),
+                    iqr_pa4=g1.quantile(0.75) - g1.quantile(0.25),
+                )
+            )
+            continue
+
+        # 1) Shapiro-Wilk
+        p_norm_g0 = stats.shapiro(g0).pvalue if len(g0) < 5000 else 1.0  # SciPy-Limitation
+        p_norm_g1 = stats.shapiro(g1).pvalue if len(g1) < 5000 else 1.0
+        normal = (p_norm_g0 > alpha) and (p_norm_g1 > alpha)
+
+        # 2) Parametrisch vs. nicht-parametrisch
+        if normal:
+            stat, p_val = stats.ttest_ind(g0, g1, equal_var=False, nan_policy="omit")
+            test_name = "t-test"
+
+            # Cohen's d (pooled SD)
+            pooled_sd = np.sqrt(
+                ((len(g0) - 1) * g0.var(ddof=1) + (len(g1) - 1) * g1.var(ddof=1))
+                / (len(g0) + len(g1) - 2)
+            )
+            eff = (g0.mean() - g1.mean()) / pooled_sd if pooled_sd > 0 else 0.0
+        else:
+            stat, p_val = stats.mannwhitneyu(g0, g1, alternative="two-sided")
+            test_name = "Mann-Whitney-U"
+
+            # Rank-Biserial-Korrelations­koeffizient als Effekt
+            n1, n2 = len(g0), len(g1)
+            eff = 1 - (2 * stat) / (n1 * n2)  # range −1…+1
+
+        results.append(
+            dict(
+                feature=feat,
+                test=test_name,
+                stat=stat,
+                p_value=p_val,
+                effect_size=eff,
+                mean_bl1=g0.mean(),
+                sd_bl1=g0.std(ddof=1),
+                median_bl1=g0.median(),
+                iqr_bl1=g0.quantile(0.75) - g0.quantile(0.25),
+                mean_pa4=g1.mean(),
+                sd_pa4=g1.std(ddof=1),
+                median_pa4=g1.median(),
+                iqr_pa4=g1.quantile(0.75) - g1.quantile(0.25),
+            )
+        )
+
+    res_df = pd.DataFrame(results)
+
+    # 3) Mehrfach­korrektur (Benjamini-Hochberg)
+    if fdr_correction:
+        mask = res_df["p_value"].notna()
+        res_df.loc[mask, "p_adj"] = multipletests(
+            res_df.loc[mask, "p_value"], alpha=alpha, method="fdr_bh"
+        )[1]
+        res_df["significant"] = res_df["p_adj"] < alpha
+    else:
+        res_df["p_adj"] = np.nan
+        res_df["significant"] = res_df["p_value"] < alpha
+
+    return res_df
+
+
+
 def main():
     print("\nGenerating data...\n")
     X, y, groups = generate_data() 
+
+    # -------------------------------------------------------------------------
+    # 1) EDA: Lage- & Streuungs­parameter (gab es schon in feature_stats)
+    # -------------------------------------------------------------------------
+    stats_df = feature_stats(X)
+    print("\nRaw-feature means & stds:\n", stats_df)
+    stats_df.to_csv("raw_feature_stats.csv", index=True)
+
+    print("\nRunning significance tests (Shapiro → t-Test / Mann-Whitney)…\n")
+    sig_df = run_significance_tests(X, y, alpha=0.05, fdr_correction=True)
+    print(sig_df[["feature", "test", "p_value", "p_adj", "significant"]])
+
+    # CSV für spätere LaTeX-Tabelle
+    sig_df.to_csv("feature_significance.csv", index=False)
+    print("\nSignificance results written to feature_significance.csv")
+
+    stats = feature_stats(X)
+    print("\nRaw-feature means & stds:\n", stats)
+    stats.to_csv("raw_feature_stats.csv", index=True)
     
     # Split für RBFN und MLP
     X_train, X_test, y_train, y_test = train_test_split(
@@ -128,80 +260,9 @@ def main():
         stratify=y
     )
     
-    print("\nTraining and evaluating RBFN gamma=0.01, components=10.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=10, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.05, components=10.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.05, n_components=10, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.1, components=10.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=10, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.5, components=10.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.5, n_components=10, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=1, components=10.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=1, n_components=10, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.01, components=50.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=50, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.05, components=50.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.05, n_components=50, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.1, components=50.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=50, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.5, components=50.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.5, n_components=50, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=1, components=50.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=1, n_components=50, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.01, components=100.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=100, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.05, components=100.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.05, n_components=100, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.1, components=100.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=100, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.5, components=100.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.5, n_components=100, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=1, components=100.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=1, n_components=100, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.01, components=200.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=200, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.05, components=200.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.05, n_components=200, random_state=20)
-
     print("\nTraining and evaluating RBFN gamma=0.1, components=200.\n")
     train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=200, random_state=20)
 
-    print("\nTraining and evaluating RBFN gamma=0.5, components=200.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.5, n_components=200, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=1, components=200.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=1, n_components=200, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.01, components=500.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.01, n_components=500, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.05, components=500.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.05, n_components=500, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.1, components=500.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=500, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=0.5, components=500.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.5, n_components=500, random_state=20)
-
-    print("\nTraining and evaluating RBFN gamma=1, components=500.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=1, n_components=500, random_state=20)
     #train_mlp(X_train, X_test, y_train, y_test)
     
     #print("\nTraining Random Forest with Leave-One-Out...\n")
