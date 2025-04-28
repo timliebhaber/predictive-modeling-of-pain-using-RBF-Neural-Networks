@@ -5,7 +5,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.svm import SVC
 
 
-def train_svm(
+def train_svm_LOGO(
         X, y, groups,
         *,
         kernel="rbf",        
@@ -35,4 +35,28 @@ def train_svm(
           classification_report(y_true, y_pred))
 
     model.fit(X, y)
+    return model
+
+def train_svm(
+        X_train, X_test, y_train, y_test,
+        *,
+        kernel="rbf",
+        C=1.0,
+        gamma="scale",
+        random_state=20,
+        refit_full=False
+    ):
+    model = make_pipeline(
+        StandardScaler(),
+        SVC(kernel=kernel, C=C, gamma=gamma, random_state=random_state)
+    )
+
+    model.fit(X_train, y_train)
+
+    # Evaluation auf Testdaten
+    y_pred = model.predict(X_test)
+    print("Accuracy SVM:", accuracy_score(y_test, y_pred))
+    print("Classification Report SVM:\n",
+          classification_report(y_test, y_pred))
+    
     return model
