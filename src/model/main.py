@@ -146,12 +146,11 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, 
         test_size=0.2, 
-        random_state=42, 
         stratify=y
     )
     
     print("\nTraining and evaluating RBFN gamma=0.1, components=200.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=200, random_state=20)
+    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=200)
 
     train_mlp(X_train, X_test, y_train, y_test)
     
