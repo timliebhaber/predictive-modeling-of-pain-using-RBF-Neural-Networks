@@ -10,30 +10,20 @@ import src.visualize as vis
 from sklearn.metrics import f1_score
 
 def f1_threshold_scorer(threshold: float = 0.5):
-    """Gibt einen Callable zurück, der für permutation_importance passt."""
     def _score(estimator, X, y_true):
-        # kontinuierliche Scores → Klassenlabels
         y_scores = estimator.predict(X)
         y_pred = (y_scores >= threshold).astype(int)
         return f1_score(y_true, y_pred)
     return _score
 
-def permutation_f1_importance(
-    model,
-    X_val: pd.DataFrame,
-    y_val,
-    *,
-    n_repeats: int = 30,
-    threshold: float = 0.5,
-    random_state: int | None = 42,
-):
-    scorer = f1_threshold_scorer(threshold)          # ← neuer Scorer
+def permutation_f1_importance(model, X_val: pd.DataFrame, y_val, *, n_repeats: int = 30, threshold: float = 0.5, random_state: int | None = 42,):
+    scorer = f1_threshold_scorer(threshold)         
     
     result = permutation_importance(
         model,
         X_val,
         y_val,
-        scoring=scorer,          # ← hier einsetzen
+        scoring=scorer,       
         n_repeats=n_repeats,
         random_state=random_state,
         n_jobs=-1,
