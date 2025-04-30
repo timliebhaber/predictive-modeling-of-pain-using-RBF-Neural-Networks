@@ -149,22 +149,23 @@ def main():
         stratify=y
     )
     
-    print("\nTraining and evaluating RBFN gamma=0.1, components=200.\n")
-    train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=200)
+    for i in range(40):
+        print("\nTraining and evaluating RBFN gamma=0.1, components=200.\n")
+        train_and_test_sklearn_rbf(X_train, y_train, X_test, y_test, gamma=0.1, n_components=200)
 
-    train_mlp(X_train, X_test, y_train, y_test)
-    
-    print("\nTraining Random Forest with Leave-One-Out...\n")
-    train_random_forest_LOGO(X, y, groups)
+        train_mlp(X_train, X_test, y_train, y_test)
+        
+        print("\nTraining Random Forest with Leave-One-Out...\n")
+        train_random_forest_LOGO(X, y, groups)
 
-    print("\nTraining Random Forest...\n")
-    train_random_forest(X_train, X_test, y_train, y_test)
+        print("\nTraining Random Forest...\n")
+        train_random_forest(X_train, X_test, y_train, y_test)
 
-    print("\nTraining Support Vector Machine with Leave-One-Out...\n")
-    train_svm_LOGO(X, y, groups)
+        #print("\nTraining Support Vector Machine with Leave-One-Out...\n")
+        #train_svm_LOGO(X, y, groups)
 
-    print("\nTraining Support Vector Machine...\n")
-    train_svm(X_train, X_test, y_train, y_test)
+        #print("\nTraining Support Vector Machine...\n")
+        #train_svm(X_train, X_test, y_train, y_test)
 
 if __name__ == "__main__":
     main()
